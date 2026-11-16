@@ -2,6 +2,7 @@ import 'dotenv/config';
 import * as argon2 from 'argon2';
 import { Pool } from 'pg';
 import { runMigrations } from './db/migrate';
+import { poolConfig } from './db/pool-config';
 import { hashBarcode, newBarcodeToken } from './cards/card-crypto';
 
 /**
@@ -13,7 +14,7 @@ async function main() {
     throw new Error('Seed demo ditolak di production. Set ALLOW_DEMO_SEED=true jika memang disengaja.');
   }
   await runMigrations();
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool(poolConfig());
   const pw = 'Demo12345!';
   const hash = await argon2.hash(pw);
 

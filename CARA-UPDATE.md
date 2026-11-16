@@ -1,5 +1,7 @@
 # Cara update E-QA (Windows + Docker Desktop)
 
+> Ingin membuka dari HP lewat internet (demo)? Lihat **PASANG-CLOUD.md** (Neon + Render + Vercel).
+
 Ikuti urut. Data (santri, saldo, kartu, top up) **tidak hilang** karena database ada di volume Docker, tapi tetap backup dulu.
 
 ## 0. Persiapan
@@ -94,6 +96,9 @@ Catatan: kembali ke data lama berarti memakai kode lama juga; jika perlu, pasang
 - Saat wali mengirim bukti transfer atau membayar tagihan dari saldo, pengurus mendengar **nada naik "ka-ching" + ucapan "Ada yang bayar"** dan melihat kotak pemberitahuan. Nada ini beda dari bunyi pemberitahuan biasa. Aplikasi memeriksa tiap 20 detik selagi halaman terbuka.
 - **Penting:** browser hanya mengizinkan suara setelah layar diketuk/diklik sekali. Jadi setelah membuka aplikasi, sentuh layar sekali. Tab yang ditutup tidak berbunyi (push notification belum ada).
 - **Pasang di layar utama (PWA):** Android Chrome: menu ⋮ → Instal aplikasi / Tambahkan ke layar utama. iPhone Safari: Bagikan → Tambah ke Layar Utama. Pemasangan hanya muncul bila alamat memakai **HTTPS** (atau localhost). Lewat alamat IP http biasa, fitur pasang tidak tersedia, tapi aplikasi tetap jalan di browser.
+
+## v1.0.1 (tanpa migrasi): siap dipasang online
+Perubahan kode: koneksi database mendukung SSL (alamat berisi `sslmode=require`), `TRUST_PROXY` untuk pembatas laju, koneksi menganggur terputus tidak mematikan API. **Di Docker lokal tidak ada perubahan perilaku**; langkah update sama seperti di atas. Panduan online: PASANG-CLOUD.md.
 
 ## Yang harus terlihat setelah update v1.0 (Tagihan per santri, bayar tagihan dari "Pindahkan uang", Impor Excel)
 

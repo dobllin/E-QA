@@ -6,11 +6,12 @@ import { Pool } from 'pg';
 import { AppModule } from './app.module';
 import { setupApp } from './app.setup';
 import { runMigrations } from './db/migrate';
+import { poolConfig } from './db/pool-config';
 
 async function bootstrapAdmin() {
   const u = process.env.BOOTSTRAP_ADMIN_USERNAME, p = process.env.BOOTSTRAP_ADMIN_PASSWORD;
   if (!u || !p) return;
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const pool = new Pool(poolConfig());
   try {
     const n = (await pool.query('SELECT count(*)::int AS n FROM users')).rows[0].n;
     if (n === 0) {

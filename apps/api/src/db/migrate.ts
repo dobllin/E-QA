@@ -2,9 +2,10 @@ import 'dotenv/config';
 import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { Pool } from 'pg';
+import { poolConfig } from './pool-config';
 
 export async function runMigrations(connectionString = process.env.DATABASE_URL) {
-  const pool = new Pool({ connectionString });
+  const pool = new Pool(poolConfig(connectionString));
   try {
     await pool.query('CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, applied_at timestamptz NOT NULL DEFAULT now())');
     const dir = join(__dirname, 'migrations');

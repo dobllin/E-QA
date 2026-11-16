@@ -1,9 +1,15 @@
 import { Global, Injectable, Module, OnModuleDestroy } from '@nestjs/common';
 import { Pool, PoolClient, QueryResultRow } from 'pg';
+import { poolConfig } from './pool-config';
 
 @Injectable()
 export class Db implements OnModuleDestroy {
-  readonly pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 20 });
+  readonly pool = new Pool({ ...poolConfig(), max: 20 });
+
+  constructor() {
+    // Koneksi menganggur bisa diputus server (mis. database cloud tidur). Tanpa ini proses bisa mati.
+    this.pool.on('error', (e) => console.error('[db] koneksi menganggur terputus:', e.message));
+  }
 
   query<T extends QueryResultRow = any>(text: string, params?: any[]) {
     return this.pool.query<T>(text, params);
