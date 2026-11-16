@@ -1,0 +1,74 @@
+# E-QA — jalankan semuanya: docker compose up -d --build
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: eqa
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?isi DB_PASSWORD di file .env}
+      POSTGRES_DB: eqa
+      TZ: UTC
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eqa -d eqa"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # Database TIDAK dibuka ke luar. Hanya API yang bisa mengaksesnya.
+
+  api:
+    build: ./apps/api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://eqa:${DB_PASSWORD}@db:5432/eqa
+      JWT_SECRET: ${JWT_SECRET:?isi JWT_SECRET (minimal 32 karakter) di file .env}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-}
+      ALLOW_DEMO_SEED: ${ALLOW_DEMO_SEED:-false}
+      POS_RATE_LIMIT: ${POS_RATE_LIMIT:-600}
+      MAX_PIN_ATTEMPTS: ${MAX_PIN_ATTEMPTS:-3}
+      PORT: "4000"
+    ports:
+      - "4000:4000"
+
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+  # Cadangan database otomatis (pg_dump → ./backups/eqa-TANGGAL.sql.gz). Ubah jadwal/lama simpan lewat .env bila perlu.
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+      BACKUP_EVERY_HOURS: ${BACKUP_EVERY_HOURS:-24}
+    volumes:
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          f=/backups/eqa-$$(date +%Y%m%d-%H%M%S).sql.gz
+          if pg_dump -h db -U eqa -d eqa --no-owner | gzip > "$$f" && [ -s "$$f" ]; then echo "[backup] tersimpan $$f"; else echo "[backup] GAGAL"; rm -f "$$f"; fi
+          find /backups -name 'eqa-*.sql.gz' -mtime +$${BACKUP_KEEP_DAYS} -delete
+          sleep $$((BACKUP_EVERY_HOURS * 3600))
+        done
+
+volumes:
+  pgdata:

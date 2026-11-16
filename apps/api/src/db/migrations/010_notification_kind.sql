@@ -1,0 +1,1 @@
+ALTER TABLE notifications ADD COLUMN kind text NOT NULL DEFAULT 'INFO' CHECK (kind IN ('INFO', 'PAYMENT'));
